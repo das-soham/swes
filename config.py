@@ -61,6 +61,19 @@ VDE_DEFAULTS = {
     "oef_theta_range": (0.15, 0.25),
 }
 
+# Buffer usability parameter (Farmer et al. 2020)
+# u = 0%: buffers treated as hard floor (procyclical — reacts immediately)
+# u = 100%: buffers fully usable (absorbs losses down to regulatory minimum)
+# Key SWES insight: BoE explicitly asks about willingness to use buffers.
+# Post-2022 FPC guidance pushed for greater buffer usability.
+BUFFER_USABILITY = {
+    "bank_u_range": (0.30, 0.70),
+    "ldi_pension_u_range": (0.20, 0.50),
+    "hedge_fund_u_range": (0.10, 0.30),
+    "insurer_u_range": (0.40, 0.70),
+    "oef_mmf_u_range": (0.10, 0.20),
+}
+
 # Reaction parameters: repo ask fractions and asset sale caps per agent type.
 # Each sale entry is (shortfall_alloc_pct, holding_cap_pct).
 REACTION_PARAMS = {

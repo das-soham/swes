@@ -48,9 +48,31 @@ def run_simulation(
         for agent in agents:
             agent.compute_stage2(market, network, agents)
 
-        # Register to market
+        # Pass 1: all agents register selling pressure to market
         for agent in agents:
             agent.register_actions_to_market(market)
+
+        # Pass 2: banks absorb from the full daily selling total,
+        # proportional to their remaining capacity (gilt + corp separately)
+        banks = [a for a in agents if a.agent_type == "bank"]
+        gilt_remaining_total = sum(
+            b.gilt_mm_appetite_mm * (1.0 - b.mm_appetite_consumed_pct)
+            for b in banks
+        )
+        corp_remaining_total = sum(
+            b.corp_mm_appetite_mm * (1.0 - b.corp_appetite_consumed_pct)
+            for b in banks
+        )
+        for bank in banks:
+            gilt_share = 0.0
+            corp_share = 0.0
+            if gilt_remaining_total > 0:
+                gilt_rem = bank.gilt_mm_appetite_mm * (1.0 - bank.mm_appetite_consumed_pct)
+                gilt_share = market.endogenous_gilt_selling_mm * (gilt_rem / gilt_remaining_total)
+            if corp_remaining_total > 0:
+                corp_rem = bank.corp_mm_appetite_mm * (1.0 - bank.corp_appetite_consumed_pct)
+                corp_share = market.endogenous_corp_selling_mm * (corp_rem / corp_remaining_total)
+            bank.post_registration_update(gilt_share, corp_share)
 
         # Stage 3 — network-propagated feedback
         if enable_feedback:

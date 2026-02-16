@@ -25,7 +25,8 @@ Stage 1: Exogenous Shock
   B0 (initial buffer) - E1 (shock: MTM + margin calls + redemptions) = B1 (post-shock buffer)
 
 Stage 2: Behavioural Reactions
-  If E1/B0 > theta: agent reacts (seek repo, sell assets, draw facilities)
+  If E1/B0 > effective_theta: agent reacts (seek repo, sell assets, draw facilities)
+  effective_theta = theta * (1 + buffer_usability)   [Farmer et al. 2020]
   B1 + reactions = B2 (post-reaction buffer)
 
 Stage 3: Systemic Feedback (N iterations per day)
@@ -112,6 +113,16 @@ The actual sale amount is `min(shortfall * shortfall_alloc_pct, holding * holdin
 
 Initial liquidity buffer (B0) multipliers per agent type. B0 is computed as a weighted sum of eligible balance sheet items, floored at a fraction of total size.
 
+### `BUFFER_USABILITY`
+
+Buffer usability parameter ranges per agent type (Farmer et al. 2020). Controls the effective reaction threshold:
+
+- `u = 0.0`: buffers treated as hard floor (procyclical — reacts immediately)
+- `u = 1.0`: buffers fully usable (absorbs losses down to regulatory minimum)
+- `effective_theta = theta * (1 + u)`
+
+Higher buffer usability means agents tolerate more stress before reacting, reducing systemic amplification. The BoE's SWES explicitly investigated willingness to use buffers as a key driver of system-wide outcomes.
+
 ### `FEEDBACK_PARAMS`
 
 Stage 3 feedback coefficients:
@@ -120,7 +131,7 @@ Stage 3 feedback coefficients:
 
 ### `agent_distributions.json`
 
-Defines the population characteristics: AUM ranges, strategy distributions, leverage ranges, balance sheet compositions, sensitivity profiles, and behavioural parameters (theta, risk appetite, repo dependence).
+Defines the population characteristics: AUM ranges, strategy distributions, leverage ranges, balance sheet compositions, sensitivity profiles, and behavioural parameters (theta, buffer usability, risk appetite, repo dependence).
 
 ### `scenario_swes1.json`
 
@@ -160,6 +171,18 @@ Stage 3 feedback operates on two layers:
 
 Additional feedback channels: reputation risk (Van den End eq. 7) and crowding penalties when many agents of the same type react with the same instruments.
 
+## Bank Market-Making Capacity
+
+Dealer banks absorb NBFI selling pressure through their market-making function. Capacity is tracked separately for gilt and corporate bond markets:
+
+- After all agents register their daily selling actions, banks absorb proportionally to their remaining capacity
+- Each bank's share = `remaining_capacity / total_remaining_across_all_banks`
+- Absorption is capped by `remaining * risk_appetite` (willingness constraint)
+- Capacity is cumulative — once consumed, it does not replenish during the scenario
+- The dashboard includes heatmaps for gilt-only and combined (gilt + corp) capacity utilisation
+
+Capacity ranges are calibrated as daily flow capacity (not total inventory), consistent with the SWES 1 finding of ~70% dealer capacity consumed.
+
 ## Calibration Targets (SWES 1)
 
 | Metric | SWES 1 Published | Description |
@@ -175,18 +198,37 @@ Additional feedback channels: reputation risk (Van den End eq. 7) and crowding p
 1. **Market Evolution** - 10-day paths for all market variables + scenario narrative
 2. **Agent Buffers** - Liquidity buffer trajectories (B3/B0) with min/max bands, waterfall chart, amplification gauge, time series, and day-filterable bar chart
 3. **System Dynamics** - Margin calls by agent type, stress flow Sankey diagram
-4. **Network View** - Relationship network graph, outcome distributions, repo refusal rate, bank capacity heatmap
+4. **Network View** - Relationship network graph, outcome distributions, repo refusal rate, bank capacity heatmaps (gilt-only and combined gilt + corp)
 5. **SWES Comparison** - Model output vs SWES 1 published findings, calibration anchors
+
+### Sidebar Controls
+
+- **Feedback toggle and iterations** - Enable/disable Stage 3 feedback and control iteration depth
+- **Buffer Usability slider** - Override bank buffer usability (Farmer et al. 2020) to demonstrate the impact of buffer willingness on systemic amplification
+- **Random seed** - Change network topology and agent parameter draws
 
 ## Key Design Decisions
 
 - **Centralised configuration:** All tunable parameters live in `config.py` or `agent_distributions.json`. No magic numbers in agent code.
 - **Network-aware reactions:** NBFI repo requests are routed to connected banks via `assess_repo_request()`, not drawn from a global pool.
 - **Stress-based repo refusal:** Banks' willingness to extend repo decays linearly with their own stress ratio (E1/B0), reaching zero at a configurable threshold.
-- **Cumulative tracking:** Gilt sales, margin calls, repo demand, and refusal flags accumulate across all 10 days.
+- **Buffer usability:** Farmer et al. (2020) parameter modulates the Van den End reaction threshold — agents with higher buffer usability tolerate more stress before reacting, reducing procyclical behaviour.
+- **Two-pass market registration:** All agents register selling pressure first, then banks absorb proportionally to remaining capacity. This ensures banks see the full daily selling total regardless of agent ordering.
+- **Cumulative tracking:** Gilt sales, margin calls, repo demand, refusal flags, and bank MM capacity consumption accumulate across all 10 days.
 - **Feedback accumulation:** Stage 3 E2 accumulates across feedback iterations within a day (`+=` not `=`), making the feedback iterations slider meaningful.
 
 ## References
 
 - Van den End, J.W. (2012). "Liquidity Stress-Tester: Do Basel III and Unconventional Monetary Policy Work?" *Applied Financial Economics*, 22(15), 1233-1257.
+- Farmer, J.D. et al. (2020). "Foundations of system-wide financial stress testing with heterogeneous institutions." *Bank of England Staff Working Paper No. 861.*
 - Bank of England (2024). System-Wide Exploratory Scenario: Final Report.
+
+## License
+
+This project is provided for educational and research purposes only. It is not intended for use in production risk management or regulatory compliance. The model outputs are illustrative and should not be interpreted as financial advice.
+
+Copyright (c) 2025 Soham Das. All rights reserved.
+
+## Author
+
+Soham Das, CFA

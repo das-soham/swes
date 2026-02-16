@@ -59,6 +59,7 @@ def _generate_banks(dist: Dict, rng) -> List[BankAgent]:
                 "tier": tier["label"],
                 "total_bs_mm": total_bs_mm,
                 "theta": theta,
+                "buffer_usability": 0.0,
                 "risk_appetite": risk_appetite,
                 "balance_sheet": {
                     "gilt_holdings_mm": total_bs_mm * rng.uniform(*comp["gilt_holdings_pct_of_bs"]),
@@ -118,6 +119,7 @@ def _generate_hedge_funds(dist: Dict, rng) -> List[HedgeFundAgent]:
             "strategy": strategy,
             "aum_mm": aum_mm,
             "theta": rng.uniform(*bp["theta_range"]),
+            "buffer_usability": 0.0,
             "strategy_profile": profile,
             "gross_leverage": rng.uniform(*profile["gross_leverage_range"]),
             "var_utilisation": rng.uniform(*bp["var_utilisation_range"]),
@@ -143,6 +145,7 @@ def _generate_ldi_pensions(dist: Dict, rng) -> List[LDIPensionAgent]:
         config = {
             "name": f"LDI_{i+1:02d} ({'pooled' if is_pooled else 'segregated'})",
             "theta": rng.uniform(*hd["theta_range"]),
+            "buffer_usability": 0.0,
             "yield_buffer_bps": rng.uniform(*hd["yield_buffer_bps_range"]),
             "balance_sheet": {
                 "gilt_holdings_mm": aum_mm * rng.uniform(*comp["gilt_pct_of_aum"]),
@@ -178,6 +181,7 @@ def _generate_insurers(dist: Dict, rng) -> List[InsurerAgent]:
         config = {
             "name": f"Insurer_{i+1:02d}",
             "theta": rng.uniform(*hd["theta_range"]),
+            "buffer_usability": 0.0,
             "hedge_ratio": rng.uniform(*hd["hedge_ratio_range"]),
             "dirty_csa_pct": rng.uniform(*hd["dirty_csa_pct_range"]),
             "balance_sheet": {
@@ -217,6 +221,7 @@ def _generate_oef_mmfs(dist: Dict, rng) -> List[OEFMMFAgent]:
             "strategy": strategy,
             "aum_mm": aum_mm,
             "theta": rng.uniform(*hd["theta_range"]),
+            "buffer_usability": 0.0,
             "pension_investor_pct": rng.uniform(*hd["pension_investor_pct_range"]),
             "insurer_investor_pct": rng.uniform(*hd["insurer_investor_pct_range"]),
             "cash_buffer_pct": rng.uniform(*hd["cash_buffer_pct_range"]),

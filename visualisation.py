@@ -461,7 +461,7 @@ def plot_repo_refusal_rate(summary: Dict) -> go.Figure:
 
 
 def plot_bank_capacity_heatmap(agents) -> go.Figure:
-    """Heatmap showing each bank's MM capacity utilisation over 10 days."""
+    """Heatmap showing each bank's gilt MM capacity utilisation over 10 days."""
     banks = [a for a in agents if a.agent_type == "bank"]
 
     bank_names = [b.name.split(" ")[0] for b in banks]
@@ -484,7 +484,36 @@ def plot_bank_capacity_heatmap(agents) -> go.Figure:
         colorbar_title="Capacity Used (%)",
     ))
     fig.update_layout(
-        title="Bank Market-Making Capacity Utilisation",
+        title="Bank Gilt Market-Making Capacity Utilisation",
+        template="plotly_white", height=400,
+    )
+    return fig
+
+
+def plot_bank_combined_capacity_heatmap(agents) -> go.Figure:
+    """Heatmap showing each bank's combined (gilt + corp) MM capacity utilisation over 10 days."""
+    banks = [a for a in agents if a.agent_type == "bank"]
+
+    bank_names = [b.name.split(" ")[0] for b in banks]
+    n_days = max(len(b.daily_combined_capacity_history) for b in banks) if banks else 10
+
+    z = []
+    for b in banks:
+        history = b.daily_combined_capacity_history
+        while len(history) < n_days:
+            history.append(history[-1] if history else 0.0)
+        z.append([v * 100 for v in history[:n_days]])
+
+    fig = go.Figure(go.Heatmap(
+        z=z,
+        x=[f"Day {d+1}" for d in range(n_days)],
+        y=bank_names,
+        colorscale="RdYlGn_r",
+        zmin=0, zmax=100,
+        colorbar_title="Capacity Used (%)",
+    ))
+    fig.update_layout(
+        title="Bank Combined (Gilt + Corp) Market-Making Capacity Utilisation",
         template="plotly_white", height=400,
     )
     return fig

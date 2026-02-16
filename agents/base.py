@@ -29,10 +29,12 @@ class BalanceSheetItem:
 
 class BaseAgent(ABC):
 
-    def __init__(self, name: str, agent_type: str, theta: float, size_factor: float = 1.0):
+    def __init__(self, name: str, agent_type: str, theta: float, size_factor: float = 1.0,
+                 buffer_usability: float = 0.0):
         self.name = name
         self.agent_type = agent_type
         self.theta = theta
+        self.buffer_usability = buffer_usability  # Farmer et al. (2020) 'u' parameter
         self.size_factor = size_factor    # Used by network for weighted assignment
         self.balance_sheet: List[BalanceSheetItem] = []
         self.liquidity = LiquidityPosition()
@@ -81,9 +83,19 @@ class BaseAgent(ABC):
         return self.liquidity.E1
 
     def should_react(self) -> bool:
+        """
+        Van den End threshold test, adjusted for buffer usability (Farmer et al. 2020).
+
+        Effective threshold = base_theta * (1 + buffer_usability)
+        - High usability (u->1.0): agent willing to absorb more loss before reacting
+          (effective theta is higher, harder to trigger)
+        - Low usability (u->0.0): agent treats buffer as floor, reacts immediately
+          (effective theta stays at base, easy to trigger)
+        """
         if self.liquidity.B0 <= 0:
             return False
-        return (self.liquidity.E1 / self.liquidity.B0) > self.theta
+        effective_theta = self.theta * (1.0 + self.buffer_usability)
+        return (self.liquidity.E1 / self.liquidity.B0) > effective_theta
 
     @abstractmethod
     def compute_reactions(self, market, network=None, agents=None) -> Dict[str, float]:

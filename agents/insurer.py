@@ -13,7 +13,8 @@ class InsurerAgent(BaseAgent):
         bs = config["balance_sheet"]
         total_mm = (bs["gilt_holdings_mm"] + bs["corp_bond_holdings_mm"] +
                     bs["equity_portfolio_mm"] + bs["cash_and_liquid_mm"])
-        super().__init__(name=name, agent_type="insurer", theta=theta, size_factor=total_mm)
+        super().__init__(name=name, agent_type="insurer", theta=theta, size_factor=total_mm,
+                         buffer_usability=config.get("buffer_usability", 0.0))
 
         self.hedge_ratio = config["hedge_ratio"]
         self.dirty_csa_pct = config["dirty_csa_pct"]

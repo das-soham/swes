@@ -12,7 +12,8 @@ class OEFMMFAgent(BaseAgent):
         name = config["name"]
         theta = config["theta"]
         aum_mm = config["aum_mm"]
-        super().__init__(name=name, agent_type="oef_mmf", theta=theta, size_factor=aum_mm)
+        super().__init__(name=name, agent_type="oef_mmf", theta=theta, size_factor=aum_mm,
+                         buffer_usability=config.get("buffer_usability", 0.0))
 
         self.strategy = config["strategy"]
         self.aum_mm = aum_mm

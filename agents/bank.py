@@ -11,7 +11,8 @@ class BankAgent(BaseAgent):
         name = config["name"]
         theta = config["theta"]
         total_bs_mm = config["total_bs_mm"]
-        super().__init__(name=name, agent_type="bank", theta=theta, size_factor=total_bs_mm)
+        super().__init__(name=name, agent_type="bank", theta=theta, size_factor=total_bs_mm,
+                         buffer_usability=config.get("buffer_usability", 0.0))
 
         self.tier = config["tier"]
         self.risk_appetite = config["risk_appetite"]
@@ -58,6 +59,9 @@ class BankAgent(BaseAgent):
 
         # Track daily capacity history
         self.daily_capacity_history: List[float] = []
+        self.corp_appetite_consumed_pct: float = 0.0
+        self.daily_corp_capacity_history: List[float] = []
+        self.daily_combined_capacity_history: List[float] = []
 
     def compute_initial_buffer(self) -> float:
         """Bank buffer = BoE eligible + CET1 headroom - wholesale funding runoff risk."""
@@ -166,12 +170,21 @@ class BankAgent(BaseAgent):
         return min(amount, available * self.risk_appetite * stress_scaling)
 
     def absorb_selling_pressure(self, amount_mm: float) -> float:
-        """Use this bank's market-making capacity to absorb selling pressure."""
+        """Use this bank's gilt market-making capacity to absorb selling pressure."""
         remaining_appetite = self.gilt_mm_appetite_mm * (1.0 - self.mm_appetite_consumed_pct)
         absorbed = min(amount_mm, remaining_appetite * self.risk_appetite)
         if self.gilt_mm_appetite_mm > 0:
             self.mm_appetite_consumed_pct += absorbed / self.gilt_mm_appetite_mm
             self.mm_appetite_consumed_pct = min(1.0, self.mm_appetite_consumed_pct)
+        return absorbed
+
+    def absorb_corp_selling_pressure(self, amount_mm: float) -> float:
+        """Use this bank's corp bond market-making capacity to absorb selling pressure."""
+        remaining_appetite = self.corp_mm_appetite_mm * (1.0 - self.corp_appetite_consumed_pct)
+        absorbed = min(amount_mm, remaining_appetite * self.risk_appetite)
+        if self.corp_mm_appetite_mm > 0:
+            self.corp_appetite_consumed_pct += absorbed / self.corp_mm_appetite_mm
+            self.corp_appetite_consumed_pct = min(1.0, self.corp_appetite_consumed_pct)
         return absorbed
 
     def tighten_repo_for_counterparties(self, network) -> None:
@@ -189,9 +202,20 @@ class BankAgent(BaseAgent):
 
     def register_actions_to_market(self, market) -> None:
         super().register_actions_to_market(market)
-        # Also absorb selling pressure as market maker
-        absorbed = self.absorb_selling_pressure(market.endogenous_gilt_selling_mm * 0.1)
-        # Tighten if reacting
+
+    def post_registration_update(self, gilt_to_absorb: float, corp_to_absorb: float) -> None:
+        """Called after ALL agents have registered, with this bank's share of selling."""
+        self.absorb_selling_pressure(gilt_to_absorb)
+        self.absorb_corp_selling_pressure(corp_to_absorb)
         if self.has_reacted:
             self.tighten_repo_for_counterparties(None)
         self.daily_capacity_history.append(self.mm_appetite_consumed_pct)
+        self.daily_corp_capacity_history.append(self.corp_appetite_consumed_pct)
+        # Combined: weighted by total capacity
+        total_cap = self.gilt_mm_appetite_mm + self.corp_mm_appetite_mm
+        if total_cap > 0:
+            gilt_used = self.mm_appetite_consumed_pct * self.gilt_mm_appetite_mm
+            corp_used = self.corp_appetite_consumed_pct * self.corp_mm_appetite_mm
+            self.daily_combined_capacity_history.append((gilt_used + corp_used) / total_cap)
+        else:
+            self.daily_combined_capacity_history.append(0.0)

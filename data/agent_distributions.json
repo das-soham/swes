@@ -4,9 +4,9 @@
     "size_distribution": {
       "description": "Total balance sheet in bn. Mix of large, medium, small.",
       "tiers": [
-        {"label": "G-SIB", "count": 3, "total_bs_bn_range": [300, 500], "gilt_mm_appetite_range": [4000, 8000]},
-        {"label": "Large domestic", "count": 4, "total_bs_bn_range": [100, 300], "gilt_mm_appetite_range": [1500, 4000]},
-        {"label": "Mid-tier / foreign sub", "count": 5, "total_bs_bn_range": [30, 100], "gilt_mm_appetite_range": [300, 1500]}
+        {"label": "G-SIB", "count": 3, "total_bs_bn_range": [300, 500], "gilt_mm_appetite_range": [1200, 2000]},
+        {"label": "Large domestic", "count": 4, "total_bs_bn_range": [100, 300], "gilt_mm_appetite_range": [400, 900]},
+        {"label": "Mid-tier / foreign sub", "count": 5, "total_bs_bn_range": [30, 100], "gilt_mm_appetite_range": [50, 200]}
       ]
     },
     "behavioural_params": {
@@ -18,7 +18,8 @@
         "note": "0.3 = very conservative (tightens early), 1.0 = aggressive (absorbs more)"
       },
       "leverage_ratio_headroom_pct_range": [0.5, 2.5],
-      "theta_range": [0.15, 0.45]
+      "theta_range": [0.15, 0.45],
+      "buffer_usability_range": [0.30, 0.70]
     },
     "balance_sheet_composition": {
       "gilt_holdings_pct_of_bs": [0.02, 0.06],
@@ -98,7 +99,8 @@
       "var_utilisation_range": [0.55, 0.90],
       "deleverage_trigger_var_pct": 0.90,
       "volatility_scaling": true,
-      "theta_range": [0.20, 0.30]
+      "theta_range": [0.20, 0.30],
+      "buffer_usability_range": [0.10, 0.30]
     }
   },
 
@@ -115,7 +117,8 @@
         "segregated_pct": 0.60,
         "note": "Pooled = faster recap, pre-agreed waterfall. Segregated = slower, trustee decisions."
       },
-      "theta_range": [0.25, 0.35]
+      "theta_range": [0.25, 0.35],
+      "buffer_usability_range": [0.20, 0.50]
     },
     "balance_sheet_composition": {
       "gilt_pct_of_aum": [0.15, 0.25],
@@ -135,7 +138,8 @@
       "dirty_csa_pct_range": [0.0, 0.70],
       "corp_bond_allocation_pct_range": [0.30, 0.60],
       "bpa_exposure_pct_range": [0.0, 0.30],
-      "theta_range": [0.40, 0.50]
+      "theta_range": [0.40, 0.50],
+      "buffer_usability_range": [0.40, 0.70]
     },
     "balance_sheet_composition": {
       "gilt_pct": [0.15, 0.35],
@@ -157,7 +161,8 @@
       "pension_investor_pct_range": [0.20, 0.80],
       "insurer_investor_pct_range": [0.05, 0.30],
       "cash_buffer_pct_range": [0.10, 0.30],
-      "theta_range": [0.15, 0.25]
+      "theta_range": [0.15, 0.25],
+      "buffer_usability_range": [0.10, 0.20]
     },
     "strategy_compositions": {
       "gilt_focused": {"gilt_pct": [0.60, 0.80], "corp_pct": [0.05, 0.15], "abs_pct": [0.0, 0.05]},

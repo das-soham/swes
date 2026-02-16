@@ -13,7 +13,8 @@ class LDIPensionAgent(BaseAgent):
         bs = config["balance_sheet"]
         aum_mm = (bs["gilt_holdings_mm"] + bs["il_gilt_holdings_mm"] +
                   bs["corp_bond_holdings_mm"] + bs["cash_and_mmf_mm"])
-        super().__init__(name=name, agent_type="ldi_pension", theta=theta, size_factor=aum_mm)
+        super().__init__(name=name, agent_type="ldi_pension", theta=theta, size_factor=aum_mm,
+                         buffer_usability=config.get("buffer_usability", 0.0))
 
         self.yield_buffer_bps = config["yield_buffer_bps"]
         self.ldi_leverage_ratio = bs["ldi_leverage_ratio"]

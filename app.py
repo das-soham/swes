@@ -18,6 +18,7 @@ from visualisation import (
     plot_amplification_timeseries,
     plot_repo_refusal_rate,
     plot_bank_capacity_heatmap,
+    plot_bank_combined_capacity_heatmap,
     plot_swes_comparison,
 )
 
@@ -44,6 +45,15 @@ with st.sidebar:
 
     random_seed = st.number_input("Random Seed", value=42, step=1,
                                    help="Change seed to see different network topologies and agent params")
+
+    st.markdown("---")
+    st.header("Buffer Usability")
+    usability_override = st.slider(
+        "Bank Buffer Usability",
+        0.0, 1.0, 0.0, 0.05,
+        help="0% = buffers are floors (procyclical). 100% = fully usable. Farmer et al. 2020."
+    )
+    st.caption("Higher -> banks absorb more -> less amplification")
 
     st.markdown("---")
     st.header("Network")
@@ -79,10 +89,13 @@ with st.sidebar:
 
 # ── Run simulation ──
 @st.cache_data
-def run_sim(seed: int, feedback: bool, fb_iters: int):
+def run_sim(seed: int, feedback: bool, fb_iters: int, bank_usability: float = 0.0):
     agents_fresh = generate_all_agents(seed=seed)
     net = RelationshipNetwork()
     net.build_network(agents_fresh, seed=seed)
+    for a in agents_fresh:
+        if a.agent_type == "bank":
+            a.buffer_usability = bank_usability
     results = run_simulation(
         agents_fresh, net,
         enable_feedback=feedback,
@@ -91,7 +104,7 @@ def run_sim(seed: int, feedback: bool, fb_iters: int):
     return results, agents_fresh, net
 
 
-results, sim_agents, sim_network = run_sim(random_seed, enable_feedback, feedback_iterations)
+results, sim_agents, sim_network = run_sim(random_seed, enable_feedback, feedback_iterations, usability_override)
 
 # ── Summary metrics ──
 summary = results["summary"]
@@ -171,8 +184,11 @@ with tab4:
     st.subheader("Repo Refusal Rate")
     st.plotly_chart(plot_repo_refusal_rate(summary), use_container_width=True)
 
-    st.subheader("Bank Capacity Heatmap")
+    st.subheader("Bank Capacity Heatmap (Gilt)")
     st.plotly_chart(plot_bank_capacity_heatmap(sim_agents), use_container_width=True)
+
+    st.subheader("Bank Capacity Heatmap (Gilt + Corp Combined)")
+    st.plotly_chart(plot_bank_combined_capacity_heatmap(sim_agents), use_container_width=True)
 
 with tab5:
     st.header("Model vs SWES 1 Published Findings")
@@ -194,3 +210,4 @@ with tab5:
 # ── Footer ──
 st.markdown("---")
 st.caption("SWES Private Markets Stress Lens v1.0 — Sprint 1: SWES 1 Channel Pack (Fast Channel)")
+st.caption("Coded by Soham Das, CFA")
